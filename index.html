@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Global Chat</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #chat-box {
+      width: 90%;
+      max-width: 500px;
+      height: 400px;
+      background: #222;
+      border-radius: 10px;
+      overflow-y: scroll;
+      padding: 10px;
+      box-shadow: 0 0 10px #0f0;
+      margin-top: 20px;
+    }
+    .msg {
+      margin-bottom: 8px;
+    }
+    .name {
+      color: #0f0;
+      font-weight: bold;
+    }
+    #input-area {
+      margin-top: 10px;
+      display: flex;
+      gap: 5px;
+    }
+    input, button {
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+    input {
+      flex: 1;
+      background: #333;
+      color: white;
+    }
+    button {
+      background: #0f0;
+      cursor: pointer;
+    }
+    #online-users {
+      margin-top: 10px;
+      color: #0f0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🌍 Global Chat</h2>
+  <div id="online-users">Online: 0</div>
+  <div id="chat-box"></div>
+  <div id="input-area">
+    <input id="msgInput" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script>
+    // ⚙️ Setup Firebase (replace with your own if you want a private one)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-test-key",
+      authDomain: "your-app.firebaseapp.com",
+      databaseURL: "https://globalchatdemo-default-rtdb.firebaseio.com",
+      projectId: "globalchatdemo",
+      storageBucket: "globalchatdemo.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:example"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Random username
+    const username = "User" + Math.floor(Math.random() * 10000);
+
+    // Online tracking
+    const onlineRef = db.ref("online/" + username);
+    onlineRef.set(true);
+    onlineRef.onDisconnect().remove();
+
+    db.ref("online").on("value", snap => {
+      document.getElementById("online-users").innerText =
+        "Online: " + snap.numChildren();
+    });
+
+    // Chat messages
+    const chatBox = document.getElementById("chat-box");
+    db.ref("messages").on("child_added", snap => {
+      const msg = snap.val();
+      const div = document.createElement("div");
+      div.className = "msg";
+      div.innerHTML = `<span class="name">${msg.name}:</span> ${msg.text}`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // Send message
+    function sendMessage() {
+      const text = document.getElementById("msgInput").value.trim();
+      if (!text) return;
+      db.ref("messages").push({
+        name: username,
+        text: text
+      });
+      document.getElementById("msgInput").value = "";
+    }
+  </script>
+</body>
+</html>
